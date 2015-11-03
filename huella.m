@@ -1,13 +1,14 @@
 function h = huella
     h.spectrogram = @shortSpectrogram;
     h.get_huella  = @get_huella;
+    h.song2huella = @song2huella;
 end
 
 function [Y F T PXX] = shortSpectrogram(a, fs)
     %[~, f t Pxx] = spectrogram(a, 512, 480, 1024, fs, 'yaxis');
     %[~, f t Pxx] = spectrogram(a, 1024, 940, 1024, fs, 'yaxis'); % más detallado
     %[~, f t Pxx] = spectrogram(a, 2048, 1920, 1024, fs, 'yaxis'); % aún más detallado
-    f_detalle = 44100;
+    f_detalle = fs; % VALOR FIJO PARA OBTENER UN VALOR POR CADA Hz
     chunk_size = 8192;
     half_chunk_size = floor(chunk_size/2);
 
@@ -38,9 +39,20 @@ function [song_h] = get_huella(spect)
     RANGES = [30,40,80,120,180,301];
     
     n = length(RANGES)-1;
-    song_h = zeros(n, size(spect,2));
+    song_h = zeros(n, size(spect,2)); % huella de la canción a retornar
     for i=1:n
         [~, I] = max( spect(RANGES(i):RANGES(i+1)-1,:) );
         song_h(i,:) = I+RANGES(i)-1;
     end
+end
+
+function [huellaSong t] = song2huella(song)
+    % multiples canales a mono
+    if size(song,2) > 1        
+        n = size(song, 2);
+        song = sum(a)/n;
+    end
+    
+    [y, ~, t] = shortSpectrogram(song, fs);
+    huellaSong = get_huella(y);
 end
