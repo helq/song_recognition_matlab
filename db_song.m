@@ -22,12 +22,12 @@ classdef db_song < handle
                 if obj.dbHashes.isKey( hH )
                     toAdd = obj.dbHashes( hH );
                     n = size(toAdd,2);
-                    toAdd(n+1).time   = timing(i);
+                    toAdd(n+1).times  = timing(i);
                     toAdd(n+1).songID = songID;
                     
                     obj.dbHashes( hH ) = toAdd;
                 else
-                    toAdd(1).time = timing(i);
+                    toAdd(1).times = timing(i);
                     toAdd(1).songID = songID;
                     
                     obj.dbHashes( hH ) = toAdd;
@@ -49,6 +49,7 @@ classdef db_song < handle
         function done = addSong(obj, audio, fs, nameSong)
             h = huella();
             [y, ~, t] = h.spectrogram(audio, fs);
+            % obteniendo huella de la canción
             huellaSong = h.get_huella(y);
 
             % obteniendo un ID para el nombre de la canción
@@ -63,6 +64,40 @@ classdef db_song < handle
             else % no se agrega la canción a la base de datos
                 done = false;
             end
+        end
+    
+        % dado un hash se buscan todas las coincidencias
+        function matches = getMatchesUsandoHash(obj, hashHuella, timing)
+            matches = struct('songID', [], 'timing', []);
+            for i=1:length(hashHuella)
+                hH = hashHuella{i};
+                if obj.dbHashes.isKey( hH )
+                    m = obj.dbHashes(hH);
+                    
+                    for songID=unique( [m.songID] )
+                        % buscando posición en la lista songID
+                        n = find(songID == matches.songID);
+                        if isempty(n)
+                            n = length(matches.songID)+1;
+                            matches(n).songID = songID;
+                            matches(n).timing = struct('timeMuestra', {}, 'times', {});
+                        end
+                        matches(n).timing(end+1).timeMuestra = timing(i);
+                        matches(n).timing(end).times = [ m( songID == [m.songID] ).times ];
+                    end
+                end
+            end
+        end
+        
+        function matches = getMatches(obj, audio, fs)
+            h = huella();
+            [y, ~, t] = h.spectrogram(audio, fs);
+            % obteniendo huella del sonido obtenido
+            huellaSong = h.get_huella(y);
+            % obteniendo hash de la huella
+            hashHuella = obj.hash(huellaSong);
+            
+            matches = obj.getMatchesUsandoHash(hashHuella, t);
         end
     end
     
