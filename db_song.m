@@ -48,9 +48,10 @@ classdef db_song < handle
         
         function done = addSong(obj, audio, fs, nameSong)
             h = huella();
-            [y, ~, t] = h.spectrogram(audio, fs);
+            intervalo_frecuencia=5;
+            [y, ~, t] = h.spectrogram(audio, fs, intervalo_frecuencia);
             % obteniendo huella de la canción
-            huellaSong = h.get_huella(y);
+            huellaSong = h.get_huella(y, intervalo_frecuencia);
 
             % obteniendo un ID para el nombre de la canción
             nameID = obj.addNameSong(nameSong);
@@ -67,23 +68,27 @@ classdef db_song < handle
         end
     
         % dado un hash se buscan todas las coincidencias
-        function matches = getMatchesUsandoHash(obj, hashHuella, timing)
-            matches = struct('songID', [], 'timing', []);
+        function toRetMatches = getMatchesUsandoHash(obj, hashHuella, timing)
+            toRetMatches = struct('songID', [], 'timing', []);
+            
+            % analizando por cada entrada de la hash del sonido
             for i=1:length(hashHuella)
                 hH = hashHuella{i};
+                
+                % si el elemento de la huella se encuentra en la db, return
                 if obj.dbHashes.isKey( hH )
                     m = obj.dbHashes(hH);
                     
                     for songID=unique( [m.songID] )
                         % buscando posición en la lista songID
-                        n = find(songID == matches.songID);
+                        n = find(songID == [toRetMatches.songID]);
                         if isempty(n)
-                            n = length(matches.songID)+1;
-                            matches(n).songID = songID;
-                            matches(n).timing = struct('timeMuestra', {}, 'times', {});
+                            n = length([toRetMatches.songID])+1;
+                            toRetMatches(n).songID = songID;
+                            toRetMatches(n).timing = struct('timeMuestra', {}, 'times', {});
                         end
-                        matches(n).timing(end+1).timeMuestra = timing(i);
-                        matches(n).timing(end).times = [ m( songID == [m.songID] ).times ];
+                        toRetMatches(n).timing(end+1).timeMuestra = timing(i);
+                        toRetMatches(n).timing(end).times = [ m( songID == [m.songID] ).times ];
                     end
                 end
             end
@@ -91,13 +96,30 @@ classdef db_song < handle
         
         function matches = getMatches(obj, audio, fs)
             h = huella();
-            [y, ~, t] = h.spectrogram(audio, fs);
+            intervalo_frecuencia=5;
+            [y, ~, t] = h.spectrogram(audio, fs, intervalo_frecuencia);
             % obteniendo huella del sonido obtenido
-            huellaSong = h.get_huella(y);
+            huellaSong = h.get_huella(y, intervalo_frecuencia);
             % obteniendo hash de la huella
             hashHuella = obj.hash(huellaSong);
             
             matches = obj.getMatchesUsandoHash(hashHuella, t);
+        end
+        
+        function [probableSongs, numMatches] = determineSongUsingMatches(obj, matches)
+            % extrayendo número de 'matches' para cada canción
+            [~, numMatches] = cellfun(@size, {matches.timing});
+            % ordenando canciones por el número de matches
+            [numMatches, I] = sort(numMatches, 'descend');
+            probableSongsIDs = [matches.songID];
+            probableSongsIDs = probableSongsIDs(I);
+            % obteniendo los nombres de los IDs de las canciones
+            probableSongs = cellfun(@(id) obj.dbNames{id}, num2cell(probableSongsIDs), 'Uniform', false);
+        end
+        function [probableSongs, numMatches] = determineSong(obj, a, fs)
+            % obteniendo los 'matches' de la base de datos
+            ms = obj.getMatches(a, fs);
+            [probableSongs, numMatches] = obj.determineSongUsingMatches(ms);
         end
     end
     
