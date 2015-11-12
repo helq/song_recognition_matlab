@@ -1,5 +1,50 @@
 function toRet = test_huella()
-    test1;
+    toRet = test5;
+end
+
+function db = test5()
+    c = cargarSonido;
+    db = db_song();
+
+    names = {
+        'sounds/Parus_major_15mars2011.wav', ...
+        'sounds/fkkireta.wav', ...
+        'sounds/Violin_for_spectrogram.wav', ...
+        'sounds/Johnny Delusional - FFS.wav', ...
+        'sounds/12_Marcos Valle Batacuda.wav'
+        };
+
+    for i=1:length(names)
+        [a, fs] = c.cargar( names{i} );
+
+        tic
+        fprintf('\n%s \n', names{i});
+        db.addSong(a, fs, names{i});
+        toc
+    end
+
+    % cargando una pista de audio
+    [a, fs] = c.cargar( 'sounds/Johnny_part.wav' );
+    a = c.agregarRuido( a, 0.4 );
+    %sound(a, fs);
+
+    % determinando a canción corresponde la pista de audio
+    ms = db.getMatches(a, fs);
+
+    % similitudes
+    simds = zeros(1, length(ms));
+    for i=1:length(ms)
+        timeMuestra = [ms(i).timing.timeMuestra];
+        times       = {ms(i).timing.times};
+
+        simds(i) = db.similitudesTiming(timeMuestra, times);
+    end
+
+    [simds, I] = sort( simds, 'descend' );
+
+    for i=1:length(I)
+        fprintf('%02d: %s\n', simds(i), db.dbNames{ms(I(i)).songID} );
+    end
 end
 
 function db = test4()
@@ -24,8 +69,8 @@ function db = test4()
     end
 
     % cargando una pista de audio
-    [a, fs] = c.cargar( names{1} );
-    a = c.agregarRuido( a, 0.05 );
+    [a, fs] = c.cargar( 'sounds/Johnny_part.wav' );
+    a = c.agregarRuido( a, 0.35 );
 
     % determinando a canción corresponde la pista de audio
     [nombresCanciones, matches] = db.determineSong(a, fs);

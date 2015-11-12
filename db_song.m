@@ -106,20 +106,37 @@ classdef db_song < handle
             matches = obj.getMatchesUsandoHash(hashHuella, t);
         end
         
-        function [probableSongs, numMatches] = determineSongUsingMatches(obj, matches)
-            % extrayendo número de 'matches' para cada canción
-            [~, numMatches] = cellfun(@size, {matches.timing});
+        function [probableSongs, numMatches] = determineSongUsingMatches(obj, matches, tipoDeBusqueda)
+
+            if     strcmp(tipoDeBusqueda, 'PorNumeroDeMatches')
+                % extrayendo número de 'matches' para cada canción
+                [~, numMatches] = cellfun(@size, {matches.timing});
+                
+            elseif strcmp(tipoDeBusqueda, 'PorCoincidenciasEnTiming')
+                
+                % obteniendo número de 'matches' que coinciden en los Timing
+                numMatches = zeros(1, length(matches));
+                for i=1:length(matches)
+                    timeMuestra = [matches(i).timing.timeMuestra];
+                    times       = {matches(i).timing.times};
+
+                    numMatches(i) = obj.similitudesTiming(timeMuestra, times);
+                end
+
+            end
+            
             % ordenando canciones por el número de matches
             [numMatches, I] = sort(numMatches, 'descend');
             probableSongsIDs = [matches.songID];
             probableSongsIDs = probableSongsIDs(I);
+
             % obteniendo los nombres de los IDs de las canciones
             probableSongs = cellfun(@(id) obj.dbNames{id}, num2cell(probableSongsIDs), 'Uniform', false);
         end
         function [probableSongs, numMatches] = determineSong(obj, a, fs)
             % obteniendo los 'matches' de la base de datos
             ms = obj.getMatches(a, fs);
-            [probableSongs, numMatches] = obj.determineSongUsingMatches(ms);
+            [probableSongs, numMatches] = obj.determineSongUsingMatches(ms, 'PorCoincidenciasEnTiming');
         end
     end
     
@@ -130,7 +147,23 @@ classdef db_song < handle
             C = num2cell(huella, 1);
             hashHuella = cellfun(@(x) num2str(x','%03d'), C, 'Uniform', false);
         end
+        
+        function similitudes = similitudesTimingOffset(timeMuestra, times, offset)
+            similitudes = 0;
+            timeMuestra = timeMuestra-timeMuestra(1);
+            for i=1:length(timeMuestra)
+                t = timeMuestra(i);
+                coincidence = find( abs( times{i}-offset - t ) < 0.05 );
+                if coincidence
+                   similitudes = similitudes + 1; 
+                end
+            end
+        end
+        
+        function similitudes = similitudesTiming(timeMuestra, times)
+            t = times{1};
+            similitudes = max( arrayfun(@(o) db_song.similitudesTimingOffset(timeMuestra, times, o), t) );
+        end
     end
-    
 end
 
