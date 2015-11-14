@@ -4,6 +4,7 @@ classdef db_song < handle
     properties
         dbHashes; % database of song hashes
         dbNames;  % base de datos para los nombres de las canciones
+        intervalo_frecuencia; % tamaÃ±o del muestreo del intervalo en el espectro de frecuencias
     end
     
     methods
@@ -11,13 +12,14 @@ classdef db_song < handle
         function obj = db_song()
             obj.dbHashes = containers.Map('KeyType', 'char', 'ValueType', 'any');
             obj.dbNames = {};
+            obj.intervalo_frecuencia = 5;
         end
         function addSongUsandoHuella(obj, huella, timing, songID)
             hashHuella = obj.hash(huella);
 
             for i=1:length(huella)
-                % si este elemento particular de la huella está en la base
-                % de datos significa que otra canción ya está en este
+                % si este elemento particular de la huella estÃ¡ en la base
+                % de datos significa que otra canciÃ³n ya estÃ¡ en este
                 hH = hashHuella{i};
                 if obj.dbHashes.isKey( hH )
                     toAdd = obj.dbHashes( hH );
@@ -36,33 +38,32 @@ classdef db_song < handle
         end
         
         function id = addNameSong(obj, nameSong)
-            % si la canción ya se encuentra en la base de datos
+            % si la canciÃ³n ya se encuentra en la base de datos
             if sum( strcmp(nameSong, obj.dbNames) )
                 id = 0;
             else
-                % en caso de que no esté en la base de datos, agregarla
+                % en caso de que no estÃ© en la base de datos, agregarla
                 id = length(obj.dbNames)+1;
                 obj.dbNames{id} = nameSong;
             end
         end
         
         function done = addSong(obj, audio, fs, nameSong)
-            h = huella();
-            intervalo_frecuencia=5;
-            [y, ~, t] = h.spectrogram(audio, fs, intervalo_frecuencia);
-            % obteniendo huella de la canción
-            huellaSong = h.get_huella(y, intervalo_frecuencia);
-
-            % obteniendo un ID para el nombre de la canción
+            % obteniendo un ID para el nombre de la canciÃ³n
             nameID = obj.addNameSong(nameSong);
             
-            % si la canción no está en la lista se agrega su hash
+            % si la canciÃ³n no estÃ¡ en la lista se agrega su hash
             if nameID
-                % agregando el hash de la canción a la base de datos
+                h = huella();
+                [y, ~, t] = h.spectrogram(audio, fs, obj.intervalo_frecuencia);
+                % obteniendo huella de la canciÃ³n
+                huellaSong = h.get_huella(y, obj.intervalo_frecuencia);
+
+                % agregando el hash de la canciÃ³n a la base de datos
                 obj.addSongUsandoHuella(huellaSong, t, nameID);
                 done = true;
 
-            else % no se agrega la canción a la base de datos
+            else % no se agrega la canciÃ³n a la base de datos
                 done = false;
             end
         end
@@ -80,7 +81,7 @@ classdef db_song < handle
                     m = obj.dbHashes(hH);
                     
                     for songID=unique( [m.songID] )
-                        % buscando posición en la lista songID
+                        % buscando posiciÃ³n en la lista songID
                         n = find(songID == [toRetMatches.songID]);
                         if isempty(n)
                             n = length([toRetMatches.songID])+1;
@@ -96,10 +97,9 @@ classdef db_song < handle
         
         function matches = getMatches(obj, audio, fs)
             h = huella();
-            intervalo_frecuencia=5;
-            [y, ~, t] = h.spectrogram(audio, fs, intervalo_frecuencia);
+            [y, ~, t] = h.spectrogram(audio, fs, obj.intervalo_frecuencia);
             % obteniendo huella del sonido obtenido
-            huellaSong = h.get_huella(y, intervalo_frecuencia);
+            huellaSong = h.get_huella(y, obj.intervalo_frecuencia);
             % obteniendo hash de la huella
             hashHuella = obj.hash(huellaSong);
             
@@ -109,12 +109,12 @@ classdef db_song < handle
         function [probableSongs, numMatches] = determineSongUsingMatches(obj, matches, tipoDeBusqueda)
 
             if     strcmp(tipoDeBusqueda, 'PorNumeroDeMatches')
-                % extrayendo número de 'matches' para cada canción
+                % extrayendo nÃºmero de 'matches' para cada canciÃ³n
                 [~, numMatches] = cellfun(@size, {matches.timing});
                 
             elseif strcmp(tipoDeBusqueda, 'PorCoincidenciasEnTiming')
                 
-                % obteniendo número de 'matches' que coinciden en los Timing
+                % obteniendo nÃºmero de 'matches' que coinciden en los Timing
                 numMatches = zeros(1, length(matches));
                 for i=1:length(matches)
                     timeMuestra = [matches(i).timing.timeMuestra];
@@ -125,8 +125,12 @@ classdef db_song < handle
 
             end
             
-            % ordenando canciones por el número de matches
+            % ordenando canciones por el nÃºmero de matches
             [numMatches, I] = sort(numMatches, 'descend');
+            % dejando Ãºnicamente canciones con mÃ¡s de un 'match'
+            numMatches = numMatches(numMatches > 1);
+            I = I(1:length(numMatches));
+            
             probableSongsIDs = [matches.songID];
             probableSongsIDs = probableSongsIDs(I);
 
@@ -148,9 +152,9 @@ classdef db_song < handle
             hashHuella = cellfun(@(x) num2str(x','%03d'), C, 'Uniform', false);
         end
         
-        function similitudes = similitudesTimingOffset(timeMuestra, times, offset)
+        function similitudes = similitudesTimingOffset(timeMuestra, times, offsetMuestraI, offset)
             similitudes = 0;
-            timeMuestra = timeMuestra-timeMuestra(1);
+            timeMuestra = timeMuestra-timeMuestra(offsetMuestraI);
             for i=1:length(timeMuestra)
                 t = timeMuestra(i);
                 coincidence = find( abs( times{i}-offset - t ) < 0.05 );
@@ -161,8 +165,15 @@ classdef db_song < handle
         end
         
         function similitudes = similitudesTiming(timeMuestra, times)
-            t = times{1};
-            similitudes = max( arrayfun(@(o) db_song.similitudesTimingOffset(timeMuestra, times, o), t) );
+            n = min( length(times), 100 );
+            to_test = randperm(n, min(n, 30));
+            %to_test = 1:n;
+            
+            similitudes = 0;
+            for i=to_test
+                s = max( arrayfun(@(o) db_song.similitudesTimingOffset(timeMuestra, times, i, o), times{i}) );
+                if similitudes < s,  similitudes = s;  end
+            end
         end
     end
 end

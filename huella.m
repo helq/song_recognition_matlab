@@ -8,13 +8,13 @@ end
 % entre cada frecuencia de las que se quiere mostrar
 function [Y F T PXX] = shortSpectrogram(a, fs, intervalo_f)
     %[~, f t Pxx] = spectrogram(a, 512, 480, 1024, fs, 'yaxis');
-    %[~, f t Pxx] = spectrogram(a, 1024, 940, 1024, fs, 'yaxis'); % m·s detallado
-    %[~, f t Pxx] = spectrogram(a, 2048, 1920, 1024, fs, 'yaxis'); % a˙n m·s detallado
+    %[~, f t Pxx] = spectrogram(a, 1024, 940, 1024, fs, 'yaxis'); % m√°s detallado
+    %[~, f t Pxx] = spectrogram(a, 2048, 1920, 1024, fs, 'yaxis'); % a√∫n m√°s detallado
     f_detalle = fs/intervalo_f; % VALOR FIJO PARA OBTENER UN VALOR POR CADA Hz
     chunk_size = 8192;
     half_chunk_size = floor(chunk_size/2);
 
-    len_f_to_cut = 305/intervalo_f; % 305 es el lÌmite del rango a mostrar
+    len_f_to_cut = 305/intervalo_f; % 305 es el l√≠mite del rango a mostrar
     
     PXX_size = floor(length(a)/half_chunk_size)-1;
     
@@ -42,7 +42,7 @@ function [song_h] = get_huella(spect, intervalo_f)
     RANGES(end) = RANGES(end)+1;
     
     n = length(RANGES)-1;
-    song_h = zeros(n, size(spect,2)); % huella de la canciÛn a retornar
+    song_h = zeros(n, size(spect,2)); % huella de la canci√≥n a retornar
     for i=1:n
         [~, I] = max( spect(RANGES(i):RANGES(i+1)-1,:) );
         song_h(i,:) = I+RANGES(i)-1;

@@ -1,5 +1,63 @@
 function toRet = test_huella()
-    toRet = test5;
+    toRet = test6;
+end
+
+function db = test6()
+    %db = test6a(); % creando la base de datos
+    %save('database/database.mat', 'db');
+    
+    load('database/database.mat', 'db');
+    test6b(db); % detectando una canción
+end
+
+function db = test6a()
+    %%
+    c = cargarSonido;
+    %db = db_song();
+
+    %dir_sounds = rdir('sounds/**/*.mp3');
+    dir_sounds = rdir('/home/helq/Music/mp3/**/*.mp3');
+    names = { dir_sounds.name };
+
+    t_total = tic;
+    for i=1:length(names)
+        fprintf('leyendo archivo "%s" ... ', names{i});
+
+        tic
+        [a, fs] = c.cargar( names{i} );
+        fprintf('agregando a la base de datos ... ');
+        db.addSong(a, fs, names{i});
+        fprintf('%.3f segundos\n', toc);
+    end
+    fprintf('\nTiempo total creando la base de datos: %.3f segundos\n', toc(t_total));
+end
+
+function test6b(db)
+    %%
+    % cargando una pista de audio
+    c = cargarSonido;
+    %[a, fs] = c.cargar( 'sounds/Johnny_part.wav' );
+    %[a, fs] = c.cargar( 'sounds/Kubbi_part.wav' );
+    %[a, fs] = c.cargar( 'sounds/Pedestrian_part.wav' );
+    %[a, fs] = c.cargar( 'sounds/Mago_part.wav' );
+    %[a, fs] = c.cargar( 'sounds/Beautés_part.wav' );
+    %[a, fs] = c.cargar( 'sounds/Gumi_part.wav' );
+    [a, fs] = c.cargar( 'sounds/Element_part.wav' );
+    a = c.agregarRuido( a, 0.15 );
+    %sound(a, fs);
+
+    tic
+    % determinando a canción corresponde la pista de audio
+    [nombresCanciones, matches] = db.determineSong(a, fs);
+
+    fprintf('\n\nCanciones encontradas, ordenadas por el número de similitudes encontradas con el audio dado:\n');
+    for i=1:length(nombresCanciones)
+        if matches(i) <= 5
+            break
+        end
+        fprintf('%02d: %s\n', matches(i), nombresCanciones{i});
+    end
+    fprintf('tiempo total en búsqueda: %.3f segs\n', toc);
 end
 
 function db = test5()
@@ -23,12 +81,13 @@ function db = test5()
         toc
     end
 
+
     % cargando una pista de audio
     [a, fs] = c.cargar( 'sounds/Johnny_part.wav' );
-    a = c.agregarRuido( a, 0.4 );
+    a = c.agregarRuido( a, 0.15 );
     %sound(a, fs);
 
-    % determinando a canci�n corresponde la pista de audio
+    % determinando a canción corresponde la pista de audio
     ms = db.getMatches(a, fs);
 
     % similitudes
@@ -72,10 +131,10 @@ function db = test4()
     [a, fs] = c.cargar( 'sounds/Johnny_part.wav' );
     a = c.agregarRuido( a, 0.35 );
 
-    % determinando a canci�n corresponde la pista de audio
+    % determinando a canción corresponde la pista de audio
     [nombresCanciones, matches] = db.determineSong(a, fs);
 
-    fprintf('\n\nCanciones encontradas, ordenadas por el n�mero de similitudes encontradas con el audio dado:\n');
+    fprintf('\n\nCanciones encontradas, ordenadas por el número de similitudes encontradas con el audio dado:\n');
     for i=1:length(nombresCanciones)
         fprintf('%02d: %s\n', matches(i), nombresCanciones{i});
     end
@@ -106,11 +165,9 @@ function test2()
 end
 
 function test1()
-    cancion = 'sounds/Violin_for_spectrogram.wav';
-    %cancion = 'sounds/Parus_major_15mars2011.wav';
-    %cancion = 'sounds/Johnny Delusional - FFS.wav';
-    %cancion = 'sounds/12_Marcos Valle Batacuda.wav';
-    %cancion = 'sounds/fkkireta.wav';
+    %%
+    %cancion = 'sounds/Mago_part.wav';
+    cancion = '/home/helq/Music/mp3/08.Gumi - 九龍レトロ.mp3';
     
     c = cargarSonido;
     [a fs] = c.cargar(cancion);
