@@ -52,7 +52,7 @@ function test6b(db)
 
     fprintf('\n\nCanciones encontradas, ordenadas por el número de similitudes encontradas con el audio dado:\n');
     for i=1:length(nombresCanciones)
-        if matches(i) <= 5
+        if matches(i) <= 10
             break
         end
         fprintf('%02d: %s\n', matches(i), nombresCanciones{i});

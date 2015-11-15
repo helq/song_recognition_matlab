@@ -157,7 +157,7 @@ classdef db_song < handle
             timeMuestra = timeMuestra-timeMuestra(offsetMuestraI);
             for i=1:length(timeMuestra)
                 t = timeMuestra(i);
-                coincidence = find( abs( times{i}-offset - t ) < 0.05 );
+                coincidence = find( abs( times{i}-offset - t ) < 0.07 );
                 if coincidence
                    similitudes = similitudes + 1; 
                 end

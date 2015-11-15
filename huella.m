@@ -11,7 +11,9 @@ function [Y F T PXX] = shortSpectrogram(a, fs, intervalo_f)
     %[~, f t Pxx] = spectrogram(a, 1024, 940, 1024, fs, 'yaxis'); % más detallado
     %[~, f t Pxx] = spectrogram(a, 2048, 1920, 1024, fs, 'yaxis'); % aún más detallado
     f_detalle = fs/intervalo_f; % VALOR FIJO PARA OBTENER UN VALOR POR CADA Hz
-    chunk_size = 8192;
+
+    chunk_size = floor( 0.12 * fs ); % más de 16 muestras por segundo
+    %chunk_size = floor( 8196* (fs/44100) ); % un poco más de 10 muestras por segungod
     half_chunk_size = floor(chunk_size/2);
 
     len_f_to_cut = 305/intervalo_f; % 305 es el límite del rango a mostrar
@@ -22,10 +24,12 @@ function [Y F T PXX] = shortSpectrogram(a, fs, intervalo_f)
     
     portion_pos = 1;
     i=1;
-    while portion_pos < length(a)
+    while portion_pos < length(a) - chunk_size
     %for i=1:1
-        a_ = a(portion_pos : min(portion_pos+(chunk_size*100),length(a)) );
-        portion_pos = portion_pos + (chunk_size*100) - half_chunk_size;
+        next_portion_pos = portion_pos+(chunk_size*100);
+
+        a_ = a(portion_pos : min(next_portion_pos,length(a)) );
+        portion_pos = next_portion_pos - half_chunk_size;
         [~, f, ~, Pxx] = spectrogram(a_, chunk_size, half_chunk_size, f_detalle, fs, 'yaxis');
 
         PXX(:, i:i+size(Pxx,2)-1) = Pxx(1:len_f_to_cut,:);
@@ -47,7 +51,7 @@ function [song_h] = get_huella(spect, intervalo_f)
         [~, I] = max( spect(RANGES(i):RANGES(i+1)-1,:) );
         song_h(i,:) = I+RANGES(i)-1;
     end
-    song_h = song_h*5;
+    song_h = song_h*intervalo_f;
 end
 
 function [huellaSong t] = song2huella(song)
