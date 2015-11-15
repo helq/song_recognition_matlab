@@ -1,21 +1,28 @@
+% probando que la base de datos, la huella y otros componentes funcionen
 function toRet = test_huella()
     toRet = test6;
 end
 
 function db = test6()
-    %db = test6a(); % creando la base de datos
-    %save('database/database.mat', 'db');
+    db_name = 'database/database.mat';
     
-    load('database/database.mat', 'db');
+    %creado la base de datos si no existe o cargarla si ya existe
+    if ~exist(db_name, 'file')
+        db = test6a();
+        save(db_name, 'db');
+    else
+        load(db_name, 'db');
+    end
+
     test6b(db); % detectando una canción
 end
 
 function db = test6a()
     %%
-    c = cargarSonido;
-    %db = db_song();
+    c = cargarSonido; % libreria
+    db = db_song();
 
-    %dir_sounds = rdir('sounds/**/*.mp3');
+    % Directorio donde se encuentran las canciones en formato mp3
     dir_sounds = rdir('/home/helq/Music/mp3/**/*.mp3');
     names = { dir_sounds.name };
 
@@ -36,13 +43,7 @@ function test6b(db)
     %%
     % cargando una pista de audio
     c = cargarSonido;
-    %[a, fs] = c.cargar( 'sounds/Johnny_part.wav' );
-    %[a, fs] = c.cargar( 'sounds/Kubbi_part.wav' );
-    %[a, fs] = c.cargar( 'sounds/Pedestrian_part.wav' );
-    %[a, fs] = c.cargar( 'sounds/Mago_part.wav' );
-    %[a, fs] = c.cargar( 'sounds/Beautés_part.wav' );
-    %[a, fs] = c.cargar( 'sounds/Gumi_part.wav' );
-    [a, fs] = c.cargar( 'sounds/Element_part.wav' );
+    [a, fs] = c.cargar( 'sounds/un_archivo.mp3' );
     a = c.agregarRuido( a, 0.15 );
     %sound(a, fs);
 
@@ -52,6 +53,7 @@ function test6b(db)
 
     fprintf('\n\nCanciones encontradas, ordenadas por el número de similitudes encontradas con el audio dado:\n');
     for i=1:length(nombresCanciones)
+        % descartar aquellas canciones en las que halla menos de 10 'matches'
         if matches(i) <= 10
             break
         end
