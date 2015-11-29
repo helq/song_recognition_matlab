@@ -4,6 +4,7 @@ function toRet = test_huella()
 end
 
 function db = test6()
+    %%    
     db_name = 'database/database.mat';
     
     %creado la base de datos si no existe o cargarla si ya existe
@@ -19,11 +20,14 @@ end
 
 function db = test6a()
     %%
-    c = cargarSonido; % libreria
+    db_name = 'database/database.mat';
     db = db_song();
+
+    c = cargarSonido; % libreria
 
     % Directorio donde se encuentran las canciones en formato mp3
     dir_sounds = rdir('/home/helq/Music/mp3/**/*.mp3');
+    %dir_sounds = rdir('sounds/complete/*.mp3');
     names = { dir_sounds.name };
 
     t_total = tic;
@@ -33,8 +37,12 @@ function db = test6a()
         tic
         [a, fs] = c.cargar( names{i} );
         fprintf('agregando a la base de datos ... ');
-        db.addSong(a, fs, names{i});
+        db.addSong(a, fs, names{i}); 
         fprintf('%.3f segundos\n', toc);
+        
+        if rem(i, 5) == 0,
+            save(db_name, 'db');
+        end
     end
     fprintf('\nTiempo total creando la base de datos: %.3f segundos\n', toc(t_total));
 end
@@ -43,10 +51,45 @@ function test6b(db)
     %%
     % cargando una pista de audio
     c = cargarSonido;
-    [a, fs] = c.cargar( 'sounds/un_archivo.mp3' );
-    a = c.agregarRuido( a, 0.15 );
+    %[a, fs] = c.cargar( 'sounds/Mago_part2.wav' );
+    [a, fs] = c.cargar( 'sounds/recorded_gumi.ogg' );
+    %a = c.agregarRuido( a, 0.15 );
     %sound(a, fs);
 
+    tic
+    % determinando a canción corresponde la pista de audio
+    [nombresCanciones, matches] = db.determineSong(a, fs);
+
+    fprintf('\n\nCanciones encontradas, ordenadas por el número de similitudes encontradas con el audio dado:\n');
+    for i=1:length(nombresCanciones)
+        % descartar aquellas canciones en las que halla menos de 10 'matches'
+        if matches(i) <= 10
+            break
+        end
+        fprintf('%02d: %s\n', matches(i), nombresCanciones{i});
+    end
+    fprintf('tiempo total en búsqueda: %.3f segs\n', toc);
+end
+
+% grabando sonido del micrófono
+function test7(db)
+    %%
+    fs = 8000;
+    recObj = audiorecorder(fs);
+
+    recordblocking(recObj, 10);
+
+    a = getaudiodata(recObj);
+
+    %audiowrite('sounds/recorded_sound.ogg', a, fs);
+
+    %filtrando
+    [b,a_butter]=butter(10,3e3/(fs/2),'low');
+    a=filtfilt(b,a_butter,a);
+
+    %sound(a, fs);
+    
+    %%
     tic
     % determinando a canción corresponde la pista de audio
     [nombresCanciones, matches] = db.determineSong(a, fs);
@@ -169,13 +212,14 @@ end
 function test1()
     %%
     %cancion = 'sounds/Mago_part.wav';
-    cancion = '/home/helq/Music/mp3/08.Gumi - 九龍レトロ.mp3';
+    %cancion = '/home/helq/Music/mp3/08.Gumi - 九龍レトロ.mp3';
+    cancion = '/home/helq/Music/mp3/from_youtube/God knows... ''''The Melancholy of Haruhi Suzumiya'''' 【涼宮ハルヒの憂鬱】-WWB01IuMvzA.mp3';
+    %cancion = 'sounds/v.ogg';
     
     c = cargarSonido;
-    [a fs] = c.cargar(cancion);
-    
+    [a, fs] = c.cargar(cancion);
     % agregando ruido
-    a = c.agregarRuido(a, 0.05);
+    %a = c.agregarRuido(a, 0.05);
 
     h = huella();
     
@@ -185,6 +229,13 @@ function test1()
     
     % ==== GRAFICANDO RESULTADOS ====
     subplot(211); % Espectrograma
+    
+    %t_a = 0:1/fs:length(a)/fs;
+    %plot(t_a(1:length(a)), a);
+    %xlabel('Tiempo (segs)');
+    %ylabel('Amplitud');
+    %grid on;
+    
     surf(t,f,y,'EdgeColor','none');
     %contour(t,f,y,5);
     axis xy; axis tight;
@@ -201,5 +252,8 @@ function test1()
         end
     end
     axis([0 t(end) -inf inf]);
+    xlabel('Tiempo (segs)');
+    ylabel('Frecuencia (KHz)');
+    grid on;
     hold off;
 end

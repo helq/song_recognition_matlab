@@ -6,7 +6,7 @@ end
 
 % crea un espectograma de un sonido, dada su frecuencia, y el intervalo
 % entre cada frecuencia de las que se quiere mostrar
-function [Y F T PXX] = shortSpectrogram(a, fs, intervalo_f)
+function [Y, F, T, PXX] = shortSpectrogram(a, fs, intervalo_f)
     %[~, f t Pxx] = spectrogram(a, 512, 480, 1024, fs, 'yaxis');
     %[~, f t Pxx] = spectrogram(a, 1024, 940, 1024, fs, 'yaxis'); % más detallado
     %[~, f t Pxx] = spectrogram(a, 2048, 1920, 1024, fs, 'yaxis'); % aún más detallado
@@ -54,14 +54,14 @@ function [song_h] = get_huella(spect, intervalo_f)
     song_h = song_h*intervalo_f;
 end
 
-function [huellaSong t] = song2huella(song)
-    % multiples canales a mono
-    if size(song,2) > 1        
-        n = size(song, 2);
-        song = sum(a)/n;
-    end
-    
-    intervalo_frecuencia = 5;
-    [y, ~, t] = shortSpectrogram(song, fs, intervalo_frecuencia);
-    huellaSong = get_huella(y, intervalo_frecuencia);
-end
+%function [huellaSong t] = song2huella(song)
+%    % multiples canales a mono
+%    if size(song,2) > 1
+%        n = size(song, 2);
+%        song = sum(a)/n;
+%    end
+%
+%    intervalo_frecuencia = 5;
+%    [y, ~, t] = shortSpectrogram(song, fs, intervalo_frecuencia);
+%    huellaSong = get_huella(y, intervalo_frecuencia);
+%end

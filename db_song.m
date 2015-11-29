@@ -17,24 +17,33 @@ classdef db_song < handle
         function addSongUsandoHuella(obj, huella, timing, songID)
             hashHuella = obj.hash(huella);
 
+            %fprintf('songID %d: ', songID);
             for i=1:length(huella)
+                hH = hashHuella{i};
+                
+                %comprobando que este elemento de la huella no corresponda
+                %con sonido en blanco, si lo es entonces 'skip'
+                if strcmp('030040080120180', hH), continue; end
+
                 % si este elemento particular de la huella está en la base
                 % de datos significa que otra canción ya está en este
-                hH = hashHuella{i};
                 if obj.dbHashes.isKey( hH )
                     toAdd = obj.dbHashes( hH );
                     n = size(toAdd,2);
+                    %if a, fprintf('%d ', n); end
                     toAdd(n+1).times  = timing(i);
                     toAdd(n+1).songID = songID;
                     
-                    obj.dbHashes( hH ) = toAdd;
+                    obj.dbHashes( hH ) = toAdd(1:n+1);
                 else
                     toAdd(1).times = timing(i);
                     toAdd(1).songID = songID;
+                    %if a, fprintf('-%.2f-', timing(i)); end
                     
-                    obj.dbHashes( hH ) = toAdd;
+                    obj.dbHashes( hH ) = toAdd(1);
                 end
             end
+            %fprintf('\n');
         end
         
         function id = addNameSong(obj, nameSong)
