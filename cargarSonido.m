@@ -10,6 +10,11 @@ function [ a, fs ] = cargar( nameSong )
     if size(a,2) > 1
         a = ( a(:,1)+a(:,2) )/2;
     end
+    
+    % filtering
+    [b,a_butter]=butter(10,3e3/(fs/2),'low'); 
+    a=filtfilt(b,a_butter,a);
+
 end
 
 function a = agregarRuido( a, percentage )
