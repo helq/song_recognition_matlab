@@ -22,7 +22,7 @@ function varargout = Interface(varargin)
 
 % Edit the above text to modify the response to help Interface
 
-% Last Modified by GUIDE v2.5 29-Nov-2015 10:26:40
+% Last Modified by GUIDE v2.5 01-Dec-2015 01:48:59
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -102,21 +102,28 @@ set(handles.listening_text,'visible','on');
 recordblocking(recObj, 10);
 audio_rec = getaudiodata(recObj);
 
-set(handles.listening_text,'visible','off');
-set(handles.searching_text,'visible','on');
-
 % filtrando
 [b,a_butter]=butter(10,3e3/(fs/2),'low');
 audio=filtfilt(b,a_butter,audio_rec);
 
+set(handles.listening_text,'visible','off');
+set(handles.searching_text,'visible','on');
+
+pause(0.01);
+
 % buscando canción
+inicio = tic;
 [nombresCanciones, matches] = db_loaded.determineSong(audio, fs);
+total = toc(inicio);
+
+set(handles.response_time_text, 'String', [num2str(total), ' segundos']);
 
 % escribiendo información de la canción en la interfaz
 if isempty(nombresCanciones) || matches(1) < 8
     set(handles.song_text, 'String', 'No existe la canción en la base de datos');
 else
-    set(handles.song_text, 'String', nombresCanciones{1});
+    [~, nombre] = fileparts( nombresCanciones{1} );
+    set(handles.song_text, 'String', nombre);
 end
 
 set(handles.information_panel,'visible','on');
@@ -180,4 +187,7 @@ function spectrogram_button_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 %movegui(Spectrogram, 'center');
-Spectrogram;
+global fs;
+global audio;
+
+Spectrogram(audio, fs);

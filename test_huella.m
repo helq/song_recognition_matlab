@@ -52,7 +52,7 @@ function test6b(db)
     % cargando una pista de audio
     c = cargarSonido;
     %[a, fs] = c.cargar( 'sounds/Mago_part2.wav' );
-    [a, fs] = c.cargar( 'sounds/recorded_gumi.ogg' );
+    [a, fs] = c.cargar( 'sounds/recorded_depedro.ogg' );
     %a = c.agregarRuido( a, 0.15 );
     %sound(a, fs);
 
@@ -75,12 +75,13 @@ end
 function test7(db)
     %%
     fs = 8000;
-    recObj = audiorecorder(fs);
+    recObj = audiorecorder(8000, 16, 1);
 
     recordblocking(recObj, 10);
 
     a = getaudiodata(recObj);
-
+    
+    %%
     %audiowrite('sounds/recorded_sound.ogg', a, fs);
 
     %filtrando
@@ -213,8 +214,8 @@ function test1()
     %%
     %cancion = 'sounds/Mago_part.wav';
     %cancion = '/home/helq/Music/mp3/08.Gumi - 九龍レトロ.mp3';
-    cancion = '/home/helq/Music/mp3/from_youtube/God knows... ''''The Melancholy of Haruhi Suzumiya'''' 【涼宮ハルヒの憂鬱】-WWB01IuMvzA.mp3';
-    %cancion = 'sounds/v.ogg';
+    %cancion = '/home/helq/Music/mp3/from_youtube/God knows... ''''The Melancholy of Haruhi Suzumiya'''' 【涼宮ハルヒの憂鬱】-WWB01IuMvzA.mp3';
+    cancion = 'sounds/v.ogg';
     
     c = cargarSonido;
     [a, fs] = c.cargar(cancion);
